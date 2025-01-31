@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <vector>
 #include <string>
+#include <fstream>
 
 const int MAX_PLAYER_NAME = 127;
 const int MAX_CARD_NAME = 63;
@@ -87,7 +88,6 @@ public:
     Deck(std::string n) : playerName(n) {
         std::cout << "\n";
         std::cout << "Add " << DECK_SIZE << " cards to your deck!\n";
-        std::cin.ignore();
         for (size_t i = 0; i < DECK_SIZE; ++i) {
             std::cout << "Enter Card name to add it to your deck (" << i + 1 << " out of " << DECK_SIZE << "): ";
             getline(std::cin, cardNames[i]);
@@ -106,6 +106,10 @@ public:
         color = c;
     }
 
+    std::string GetPlayerName() const {
+        return playerName;
+    }
+
 private:
     std::string playerName;
     std::string cardNames[DECK_SIZE];
@@ -117,6 +121,7 @@ void CreatePlayer(std::vector<Player>& Players);
 void CreateCard(std::vector<Card>& Cards);
 void CreateDeck(const std::vector<Card>& Cards, const std::vector<Player>& Players, std::vector<Deck>& Decks);
 void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards);
+bool Report(const std::vector<Deck>& Decks, const std::vector<Card>& Cards);
 
 
 int main()
@@ -141,9 +146,12 @@ int main()
         }
         else if (command == "cd") {
             CreateDeck(Cards,Players,Decks);
+            DeckColor(Decks,Cards);
         }
         else if(command == "report"){
-
+            if (Report(Decks, Cards)) {
+                std::cout << "\nReport Created!\n";
+            }
         }
         else if (command == "exit") {
             running = false;
@@ -151,11 +159,6 @@ int main()
         else {
             return 1;
         }
-    }
-
-    DeckColor(Decks, Cards);
-    for (auto& deck : Decks) {
-        std::cout << deck.GetColor() << "\n";
     }
 
 
@@ -261,17 +264,23 @@ void CreateDeck(const std::vector<Card>& Cards, const std::vector<Player>& Playe
     }
     
     std::string name;
-    std::cout << "Enter player name: ";
-    std::cin >> name;
+    std::cout << "\nEnter player name: ";
+    getline(std::cin, name);
 
- 
-
+    bool playerFound = false;
     for (const auto& player : Players) {
         if (name == player.GetName()) {
             std::cout << "\nPlayer was found!\n";
+            playerFound = true;
             break;
         }
+
+        if (!playerFound) {
+            std::cout << "\nPlayer was not found!\n";
+            return;
+        }
     }
+
 
     std::cout << "\n       Name of Card\n";
     std::cout << "------------------------------\n";
@@ -281,6 +290,8 @@ void CreateDeck(const std::vector<Card>& Cards, const std::vector<Player>& Playe
 
    Deck deck(name);
    Decks.push_back(deck);
+
+   std::cin.ignore();
 
 }
 
@@ -349,6 +360,48 @@ void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
 
     }
     
+}
+
+bool Report(const std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
+
+    std::ofstream file("Report.txt", std::ios::out);
+
+    if (!file.is_open()) {
+        std::cout << "\n Error! File not created!\n";
+        return false;
+    }
+    else {
+        for (auto& deck : Decks) {
+                file << "Red\n";
+                for (auto& deck : Decks) {
+                    if (deck.GetColor() == 0)
+                        file << "Owner: " << deck.GetPlayerName() << "  Card: " << deck.GetDeckCardNames()[0] << "\n";
+                    } 
+                file << "Black\n";
+                for (auto& deck : Decks) {
+                    if (deck.GetColor() == 1)
+                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                }
+                file << "Blue\n";
+                for (auto& deck : Decks) {
+                    if (deck.GetColor() == 2)
+                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                }
+                file << "White\n";
+                for (auto& deck : Decks) {
+                    if (deck.GetColor() == 3)
+                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                }
+                file << "Green\n";
+                for (auto& deck : Decks) {
+                    if (deck.GetColor() == 4)
+                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                }
+        }
+
+        file.close();
+    }
+    return true;
 }
 
 
