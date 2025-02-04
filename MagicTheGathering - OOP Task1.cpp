@@ -9,7 +9,7 @@ const int MAX_PLAYER_NAME = 127;
 const int MAX_CARD_NAME = 63;
 const int DECK_SIZE = 3;         // ТОВА ПО УСЛОВИЕ ТРЯБВА ДА Е 60 - СЛЕД КАТО СЕ НАПРАВИ ДА РАБОТИ ТРЯБВА ДА СЕ СМЕНИ
 
-//Това ще се ползва за цвета на картите и на тестетата
+
 enum Color {
     Red,
     Black,
@@ -18,10 +18,11 @@ enum Color {
     Green
 };
 
-// Ще се използва да се създават играчи
+
 class Player
 {
 public:
+    Player() = default;
 
     Player(const char* name) : playerID(++nextID) {
         strncpy_s(playerName, sizeof(playerName), name, _TRUNCATE);
@@ -45,10 +46,12 @@ private:
 size_t Player::nextID = 0;
 
 
-//Ще се използва да се създават карти
+
 class Card 
 {
 public:
+    Card() = default;
+
     Card(const char* name, Color c) : cardID(++cID), color(c) {
         strncpy_s(cardName, sizeof(cardName), name, _TRUNCATE);
         cardName[MAX_CARD_NAME] = '\0';
@@ -75,7 +78,7 @@ private:
 
 size_t Card::cID = 0;
 
-//Ще се използва за създаване на тестета
+
 class Deck
 {
 public:
@@ -122,6 +125,7 @@ void CreateCard(std::vector<Card>& Cards);
 void CreateDeck(const std::vector<Card>& Cards, const std::vector<Player>& Players, std::vector<Deck>& Decks);
 void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards);
 bool Report(const std::vector<Deck>& Decks, const std::vector<Card>& Cards);
+std::string ToColor(Color color);
 
 
 int main()
@@ -131,6 +135,51 @@ int main()
     std::vector<Deck> Decks;
     std::vector<Player> Players;
     std::vector<Card> Cards;
+
+    //This will read the binary file for players
+    std::ifstream readingPlayers("players.dat", std::ios::binary);
+    if (!readingPlayers.is_open()) {
+        std::cout << "Error! File was not opened!\n";
+    }
+    else {
+        Player tempPlayer;
+
+        while (readingPlayers.read(reinterpret_cast<char*> (&tempPlayer), sizeof(Player))) {
+            std::cout << "Name: " << tempPlayer.GetName() <<  "  ID Number: " << tempPlayer.GetPlayerID() << "\n";
+        }
+
+        readingPlayers.close();
+    }
+
+    //This will read the binary file for cards
+    std::ifstream readingCards("cards.dat", std::ios::binary);
+    if (!readingCards.is_open()) {
+        std::cout << "Error! File was not opened!\n";
+    }
+    else {
+        Card tempCard;
+        while (readingCards.read(reinterpret_cast<char*> (&tempCard), sizeof(Card))) {
+            Color tempColor = tempCard.GetColor();
+            std::cout << "Card Name: " << tempCard.GetName() << "  Card ID: " << tempCard.GetCardID() << "  Card Color: " << ToColor(tempColor) << "\n";
+        }
+
+        readingCards.close();
+    }
+
+    //This will read the binary file for decks
+    std::ifstream readingDecks("decks.dat", std::ios::binary);
+
+    if (!readingDecks.is_open()) {
+        std::cout << "Error! File was not opened!\n";
+    }
+    else {
+        Deck deck;
+        while (readingDecks.read(reinterpret_cast<char*> (&deck), sizeof(Deck))) {
+            Color tempColor = deck.GetColor();
+            std::cout << "Deck Owner: " << deck.GetPlayerName() << "  Deck Color: " << ToColor(tempColor) << "\n";
+        }
+        readingDecks.close();
+    }
 
 
     std::cout << "Welcome to the game 'Magic The Gathering' \n";
@@ -162,8 +211,11 @@ int main()
     }
 
 
+
+
 }
 
+//Menu of the program
 void Menu() {
     std::cout << "\nChoose one of the following commands\n";
     std::cout << "----------------------------------\n";
@@ -174,14 +226,14 @@ void Menu() {
     std::cout << "'exit' - To exit\n\n";
 }
 
-//Тази функция ще създаде играч с уникален идентификационен номер
+//This function will create a player with an unique ID number
 void CreatePlayer(std::vector<Player>& Players) {
     char name[MAX_PLAYER_NAME];
 
     std::cout << "Enter Player name: ";
     std::cin.getline(name, sizeof(name));
 
-    //Това проверява дали вече съществува играч с подаваното име
+    //This verifies if a player already exists
     for (const auto& player : Players) {
         if (strcmp(name, player.GetName()) == 0) {
             std::cout << "\nPlayer already exists!\n";
@@ -196,7 +248,7 @@ void CreatePlayer(std::vector<Player>& Players) {
 
 }
 
-//Тази функция ше създава картите и ще проверява дали са уникални
+//This function will create the cards and verify if they are unique
 void CreateCard(std::vector<Card>& Cards) {
     char name[MAX_CARD_NAME];
     std::string color;
@@ -237,7 +289,7 @@ void CreateCard(std::vector<Card>& Cards) {
     std::cout << "Enter Card name: ";
     std::cin.getline(name, sizeof(name));
 
-    //Това проверява дали името на картата вече съществува
+    //This verifies if the card name already exists
     for (auto& card : Cards) {
         if (strcmp(name, card.GetName()) == 0) {
             std::cout << "\nCard already exists!\n";
@@ -251,7 +303,7 @@ void CreateCard(std::vector<Card>& Cards) {
 }
 
 
-//Тази фунцкия ще създава тестетата
+//This function will create the decks
 void CreateDeck(const std::vector<Card>& Cards, const std::vector<Player>& Players, std::vector<Deck>& Decks) {
     if (Players.empty()) {
         std::cout << "\nCurrently there are no players available! Create a Player!\n";
@@ -274,12 +326,12 @@ void CreateDeck(const std::vector<Card>& Cards, const std::vector<Player>& Playe
             playerFound = true;
             break;
         }
+    }
 
         if (!playerFound) {
             std::cout << "\nPlayer was not found!\n";
             return;
         }
-    }
 
 
     std::cout << "\n       Name of Card\n";
@@ -295,7 +347,7 @@ void CreateDeck(const std::vector<Card>& Cards, const std::vector<Player>& Playe
 
 }
 
-//Тази функция ще намира цвета на тестетата
+//This function will set the color of the created decks
 void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
 
     int red = 0;
@@ -305,7 +357,7 @@ void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
     int green = 0;
     Color setColor;
 
-    //Това проверява цвета на картите
+    //This checks the color of the cards in the deck
     for (auto& deck : Decks) {
         const std::string* cardName = deck.GetDeckCardNames();
         for (size_t i = 0; i < DECK_SIZE; ++i) {
@@ -331,7 +383,7 @@ void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
             }
         }
 
-        //Това проверява какъв цвят трябва да е тестето
+        //This checks what color the deck should be
         if (red > black && red > blue && red > white && red > green) {
             setColor = Color::Red;
         }
@@ -348,10 +400,10 @@ void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
             setColor = Color::Green;
         }
 
-        //Това задава цвета на тестето
+        //This sets the color of the deck
         deck.SetColor(setColor);
 
-        //Това занулява стойностите за цветовете за да може да се изчисли правилно за следващото тесте
+        //This resets the colors so it can evaluated correctly for the next deck
         red = 0;
         black = 0;
         blue = 0;
@@ -362,6 +414,8 @@ void DeckColor(std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
     
 }
 
+
+//This will generate the text file "Report" where decks will be separated by colors and info like Deck Owner, First Card Deck and First Card Color will be displayed
 bool Report(const std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
 
     std::ofstream file("Report.txt", std::ios::out);
@@ -371,37 +425,107 @@ bool Report(const std::vector<Deck>& Decks, const std::vector<Card>& Cards) {
         return false;
     }
     else {
-        for (auto& deck : Decks) {
                 file << "Red\n";
                 for (auto& deck : Decks) {
-                    if (deck.GetColor() == 0)
-                        file << "Owner: " << deck.GetPlayerName() << "  Card: " << deck.GetDeckCardNames()[0] << "\n";
+                    if (deck.GetColor() == Color::Red) {
+                        std::string firstCardName = deck.GetDeckCardNames()[0];
+                        Color firstCardColor = Color::Red;
+
+                        for (auto& card : Cards) {
+                            if (card.GetName() == firstCardName) {
+                                firstCardColor = card.GetColor();
+                            }
+
+                        }
+
+                        file << "    Owner: " << deck.GetPlayerName() << "  Card: " << deck.GetDeckCardNames()[0] << "  Color: " << ToColor(firstCardColor) << "\n";
+                    }
                     } 
+
+
+
                 file << "Black\n";
                 for (auto& deck : Decks) {
-                    if (deck.GetColor() == 1)
-                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                    if (deck.GetColor() == Color::Black) {
+                        std::string firstCardName = deck.GetDeckCardNames()[0];
+                        Color firstCardColor = Color::Black;
+
+                        for (auto& card : Cards) {
+                            if (card.GetName() == firstCardName) {
+                                firstCardColor = card.GetColor();
+                            }
+
+                        }
+
+                        file << "    Owner: " << deck.GetPlayerName() << "  Card: " << deck.GetDeckCardNames()[0] << "  Color: " << ToColor(firstCardColor) << "\n";
+                    }
                 }
+
                 file << "Blue\n";
                 for (auto& deck : Decks) {
-                    if (deck.GetColor() == 2)
-                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                    if (deck.GetColor() == Color::Blue) {
+                        std::string firstCardName = deck.GetDeckCardNames()[0];
+                        Color firstCardColor = Color::Blue;
+
+                        for (auto& card : Cards) {
+                            if (card.GetName() == firstCardName) {
+                                firstCardColor = card.GetColor();
+                            }
+
+                        }
+
+                        file << "    Owner: " << deck.GetPlayerName() << "  Card: " << deck.GetDeckCardNames()[0] << "  Color: " << ToColor(firstCardColor) << "\n";
+                    }
                 }
+
                 file << "White\n";
                 for (auto& deck : Decks) {
-                    if (deck.GetColor() == 3)
-                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                    if (deck.GetColor() == Color::White) {
+                        std::string firstCardName = deck.GetDeckCardNames()[0];
+                        Color firstCardColor = Color::White;
+
+                        for (auto& card : Cards) {
+                            if (card.GetName() == firstCardName) {
+                                firstCardColor = card.GetColor();
+                            }
+
+                        }
+
+                        file << "    Owner: " << deck.GetPlayerName() << "  Card: " << deck.GetDeckCardNames()[0] << "  Color: " << ToColor(firstCardColor) << "\n";
+                    }
                 }
+
                 file << "Green\n";
                 for (auto& deck : Decks) {
-                    if (deck.GetColor() == 4)
-                        file << "Card: " << deck.GetDeckCardNames()[0] << "\n";
+                    if (deck.GetColor() == Color::Green) {
+                        std::string firstCardName = deck.GetDeckCardNames()[0];
+                        Color firstCardColor = Color::Green;
+
+                        for (auto& card : Cards) {
+                            if (card.GetName() == firstCardName) {
+                                firstCardColor = card.GetColor();
+                            }
+
+                        }
+
+                        file << "    Owner: " << deck.GetPlayerName() << "  Card: " << deck.GetDeckCardNames()[0] << "  Color: " << ToColor(firstCardColor) << "\n";
+                    }
                 }
-        }
 
         file.close();
     }
     return true;
 }
 
+//This will convert the color into string so it can be saved in the text file
+std::string ToColor(Color color) {
+    switch (color) {
+    case Red: return "Red";
+    case Black: return "Black";
+    case Blue: return "Blue";
+    case White: return "White";
+    case Green: return "Green";
+    default: return "Unknown";
+    }
+}
 
